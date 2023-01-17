@@ -3,9 +3,9 @@ extern crate proc_macro;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    self, punctuated::Punctuated, token::Comma, AngleBracketedGenericArguments, FnArg,
-    GenericArgument, Pat, Path, PathArguments, QSelf, Type, TypeArray, TypeGroup, TypePath,
-    TypePtr, TypeSlice, TypeTuple,
+    self, punctuated::Punctuated, spanned::Spanned, token::Comma, AngleBracketedGenericArguments,
+    FnArg, GenericArgument, Item, Pat, Path, PathArguments, QSelf, Type, TypeArray, TypeGroup,
+    TypePath, TypePtr, TypeSlice, TypeTuple,
 };
 macro_rules! syn_err {
     ($l:literal $(, $a:expr)*) => {
