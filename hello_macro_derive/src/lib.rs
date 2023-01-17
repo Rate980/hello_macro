@@ -1,12 +1,20 @@
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     self, punctuated::Punctuated, token::Comma, AngleBracketedGenericArguments, FnArg,
     GenericArgument, Pat, Path, PathArguments, QSelf, Type, TypeArray, TypeGroup, TypePath,
     TypePtr, TypeSlice, TypeTuple,
 };
+macro_rules! syn_err {
+    ($l:literal $(, $a:expr)*) => {
+        syn_err!(proc_macro2::Span::call_site(); $l $(, $a)*)
+    };
+    ($s:expr; $l:literal $(, $a:expr)*) => {
+        return Err(syn::Error::new($s, format!($l $(, $a)*)))
+    };
+}
 
 fn impl_hello_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -21,12 +29,12 @@ fn impl_hello_macro(ast: &syn::DeriveInput) -> TokenStream {
 }
 
 #[proc_macro_derive(HelloMacro)]
-pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
+pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // 操作可能な構文木としてのRustコードの表現を構築する
     let ast = syn::parse(input).unwrap();
 
     // トレイトの実装内容を構築
-    impl_hello_macro(&ast)
+    impl_hello_macro(&ast).into()
 }
 
 #[inline]
@@ -168,12 +176,27 @@ fn types_struct(_ast: syn::ItemStruct) {
 }
 
 #[proc_macro_attribute]
-pub fn types(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn types(
+    _attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let ret = item.clone();
-    if let Ok(ast) = syn::parse(item.clone()) {
-        types_fn(ast);
-        return ret;
+    // if let Ok(ast) = syn::parse(item.clone()) {
+    //     types_fn(ast);
+    //     return ret;
+    // }
+    // types_struct(syn::parse(item).unwrap());
+    match parse(item) {
+        Ok(_) => ret,
+        Err(x) => x.to_compile_error().into(),
     }
-    types_struct(syn::parse(item).unwrap());
-    ret
+}
+
+fn parse(input: proc_macro::TokenStream) -> syn::Result<()> {
+    match syn::parse::<Item>(input)? {
+        Item::Fn(x) => types_fn(x),
+        Item::Struct(x) => types_struct(x),
+        x => syn_err!(x.span(); "unexpected item"),
+    }
+    Ok(())
 }
