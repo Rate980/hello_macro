@@ -41,21 +41,16 @@ pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 fn type_to_string(t: Type) -> String {
     match t {
         Type::Array(t) => array_to_string(t),
-        Type::BareFn(_) => "".into(),
         Type::Group(t) => group_to_string(t),
-        Type::ImplTrait(_) => "".into(),
         Type::Infer(_) => "_".into(),
-        Type::Macro(_) => "".into(),
         Type::Never(_) => "!".into(),
         Type::Paren(t) => paren_to_string(t),
         Type::Path(t) => type_path_to_string(t),
         Type::Ptr(t) => ptr_to_string(t),
         Type::Reference(t) => reference_to_string(t),
         Type::Slice(t) => slice_to_string(t),
-        Type::TraitObject(_) => "".into(),
         Type::Tuple(t) => tuple_to_string(t),
-        Type::Verbatim(_) => "".into(),
-        _ => todo!(),
+        _ => "".into(),
     }
 }
 
