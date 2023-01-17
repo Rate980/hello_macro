@@ -42,7 +42,6 @@ fn type_to_string(t: Type) -> String {
     match t {
         Type::Array(t) => array_to_string(t),
         Type::Group(t) => group_to_string(t),
-        Type::Infer(_) => "_".into(),
         Type::Never(_) => "never".into(),
         Type::Paren(t) => paren_to_string(t),
         Type::Path(t) => type_path_to_string(t),
