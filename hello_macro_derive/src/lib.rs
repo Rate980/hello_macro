@@ -3,8 +3,9 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    self, AngleBracketedGenericArguments, GenericArgument, Path, PathArguments, QSelf, Type,
-    TypeArray, TypeGroup, TypePath, TypePtr, TypeSlice, TypeTuple,
+    self, punctuated::Punctuated, token::Comma, AngleBracketedGenericArguments, FnArg,
+    GenericArgument, Pat, Path, PathArguments, QSelf, Type, TypeArray, TypeGroup, TypePath,
+    TypePtr, TypeSlice, TypeTuple,
 };
 
 fn impl_hello_macro(ast: &syn::DeriveInput) -> TokenStream {
@@ -86,7 +87,7 @@ fn path_arguments_to_string(t: AngleBracketedGenericArguments) -> String {
 #[inline]
 fn path_to_string(t: Path) -> String {
     let path_segment = t.segments[t.segments.len() - 1].clone();
-    println!("{}", (path_segment.ident));
+    // println!("{}", (path_segment.ident.to_string()));
     let ident = match &*path_segment.ident.to_string() {
         "u8" | "u16" | "u32" | "u64" | "u128" | "usize" | "i8" | "i16" | "i32" | "i64" | "i128"
         | "isize" | "f32" | "f64" => "number",
@@ -106,13 +107,14 @@ fn path_to_string(t: Path) -> String {
 }
 
 #[inline]
+#[allow(dead_code)]
 fn qself_to_string(t: QSelf) -> String {
     type_to_string(*t.ty)
 }
 
 #[inline]
 fn type_path_to_string(t: TypePath) -> String {
-    let t = dbg!(t);
+    // let t = dbg!(t);
     format!("{}", path_to_string(t.path))
 }
 
@@ -129,16 +131,37 @@ fn group_to_string(t: TypeGroup) -> String {
     type_to_string(*t.elem)
 }
 
+fn pat_to_string(t: Pat) -> String {
+    match t {
+        Pat::Ident(t) => t.ident.to_string(),
+        _ => "".into(),
+    }
+}
+
+fn fn_arg_to_string(t: Punctuated<FnArg, Comma>) -> String {
+    let mut ret = "".to_owned();
+    for x in t {
+        ret += &format!(
+            ",{}",
+            match x {
+                FnArg::Receiver(_) => "self".to_owned(),
+                FnArg::Typed(t) => format!("{}:{}", pat_to_string(*t.pat), type_to_string(*t.ty)),
+            }
+        );
+    }
+    ret[1..].into()
+}
+
 fn types_fn(ast: syn::ItemFn) {
     // println!("{}", ast.sig.ident.to_string());
-    println!(
-        "{}",
-        if let syn::ReturnType::Type(_, t) = ast.sig.output {
-            type_to_string(*t)
-        } else {
-            "".into()
-        }
-    );
+    let name = ast.sig.ident.to_string();
+    let return_type = if let syn::ReturnType::Type(_, t) = ast.sig.output {
+        ":".to_owned() + &type_to_string(*t)
+    } else {
+        "".into()
+    };
+    let attr = fn_arg_to_string(ast.sig.inputs);
+    println!("function {}({}){}", name, attr, return_type)
 }
 fn types_struct(_ast: syn::ItemStruct) {
     // dbg!(ast);
